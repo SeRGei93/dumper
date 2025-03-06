@@ -1,0 +1,17 @@
+database:
+  host: ${DB_HOST}
+  user: ${DB_USER}
+  password: ${DB_PASSWORD}
+  name: ${DB_NAME}
+  exclude_tables:
+    - b_user
+
+minio:
+  endpoint: ${S3_HOST}
+  bucket: ${S3_BUCKET}
+  region: ${S3_REGION}
+  access_key: ${S3_ACCESS_KEY}
+  secret_key: ${S3_SECRET_KEY}
+  use_ssl: false
+
+dir: ./backups

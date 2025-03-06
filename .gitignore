@@ -1,0 +1,6 @@
+/backups/
+.idea
+/.env
+data
+build
+.DS_Store
