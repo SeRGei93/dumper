@@ -2,28 +2,19 @@ package main
 
 import (
 	"backuper/config"
-	"backuper/internal/backup"
-	"backuper/internal/storage"
-	"fmt"
+	"backuper/internal/pkg/app"
 	"log"
-	"os"
 )
 
 func main() {
 	config.LoadConfig()
-	dumpFile, err := backup.WithMysqlDump()
+	dumperS3, err := app.New(&config.Cfg)
 	if err != nil {
-		fmt.Println("Ошибка:", err.Error())
-		_ = os.Remove(dumpFile)
-		return
+		log.Fatal(err)
 	}
 
-	log.Printf("Дамп успешно создан: %s", dumpFile)
-
-	err = storage.UploadToMinio(dumpFile)
+	err = dumperS3.Run()
 	if err != nil {
-		fmt.Println("Ошибка:", err.Error())
+		log.Fatal(err)
 	}
-
-	_ = os.Remove(dumpFile)
 }

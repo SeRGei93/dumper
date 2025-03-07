@@ -23,6 +23,7 @@ type S3Params struct {
 	AccessKey string `mapstructure:"access_key"`
 	SecretKey string `mapstructure:"secret_key"`
 	UseSSL    bool   `mapstructure:"use_ssl"`
+	MaxFiles  int64  `mapstructure:"max_files"`
 }
 
 type Config struct {

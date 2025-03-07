@@ -13,5 +13,6 @@ minio:
   access_key: ${S3_ACCESS_KEY}
   secret_key: ${S3_SECRET_KEY}
   use_ssl: false
+  max_files: 5
 
 dir: ./backups
