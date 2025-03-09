@@ -2,6 +2,7 @@ package minio
 
 import (
 	"backuper/config"
+	"backuper/internal/util"
 	"context"
 	"fmt"
 	"log"
@@ -20,13 +21,13 @@ type Minio struct {
 }
 
 func New() (*Minio, error) {
-	cfg := config.Cfg.Minio
-	client, err := createClient(cfg)
+	cfg := config.Cfg
+	client, err := createClient(&cfg)
 	if err != nil {
 		return nil, err
 	}
 
-	return &Minio{Client: client, Bucket: cfg.Bucket, MaxFiles: cfg.MaxFiles}, nil
+	return &Minio{Client: client, Bucket: cfg.Minio.Bucket, MaxFiles: cfg.MaxFiles}, nil
 }
 
 // Upload загружает файл в MinIO
@@ -58,26 +59,31 @@ func (M Minio) Upload(filePath string) error {
 		return fmt.Errorf("ошибка загрузки в MinIO: %v", err)
 	}
 
-	log.Printf("Файл успешно загружен в MinIO: %s/%s", M.Bucket, fileName)
 	return nil
 }
 
 func (M Minio) DownloadLastObject(localDir string) (string, error) {
+	loading := make(chan bool)
+	defer close(loading)
+
+	go util.Spinner(loading, "Загружаю последний дамп")
+
 	objects, err := M.GetObjects()
 	if err != nil {
 		return "", err
 	}
 
-	err = M.Client.FGetObject(context.Background(), M.Bucket, objects[0].Key, localDir, minio.GetObjectOptions{})
+	fileName := objects[0].Key
+	localPath := filepath.Join(localDir, filepath.Base(fileName))
+	err = M.Client.FGetObject(context.Background(), M.Bucket, fileName, localPath, minio.GetObjectOptions{})
 	if err != nil {
 		log.Fatalln("Ошибка скачивания файла:", err)
 	}
 
-	path := fmt.Sprintf("./%s/%s", localDir, objects[0].Key)
+	loading <- true
+	fmt.Println("✅ Файл успешно скачан в:", localPath)
 
-	fmt.Println("✅ Файл успешно скачан в:", path)
-
-	return path, nil
+	return localPath, nil
 }
 
 func (M Minio) GetObjects() ([]minio.ObjectInfo, error) {
@@ -126,10 +132,10 @@ func (M Minio) RemoveObjects(objects []minio.ObjectInfo) error {
 	return nil
 }
 
-func createClient(params config.S3Params) (*minio.Client, error) {
-	minioClient, err := minio.New(params.Endpoint, &minio.Options{
-		Creds:  credentials.NewStaticV4(params.AccessKey, params.SecretKey, ""),
-		Secure: params.UseSSL,
+func createClient(params *config.Config) (*minio.Client, error) {
+	minioClient, err := minio.New(params.Minio.Endpoint, &minio.Options{
+		Creds:  credentials.NewStaticV4(params.Minio.AccessKey, params.Minio.SecretKey, ""),
+		Secure: params.Minio.UseSSL,
 	})
 
 	if err != nil {

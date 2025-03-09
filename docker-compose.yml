@@ -2,6 +2,7 @@ services:
   mysql:
     build: ./docker/mysql
     container_name: mysql-container
+    platform: linux/amd64
     environment:
       MYSQL_ROOT_PASSWORD: root
       MYSQL_DATABASE: dev

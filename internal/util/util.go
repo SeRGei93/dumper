@@ -20,3 +20,20 @@ func GetDumpFileName(dir string, gzip bool) (string, error) {
 
 	return fmt.Sprintf("%s/backup_%s.%s", dir, timeStamp, extension), nil
 }
+
+func Spinner(done chan bool, msg string) {
+	chars := []rune{'|', '/', '-', '\\'}
+
+	i := 0
+	for {
+		select {
+		case <-done:
+			fmt.Print("\r          \r") // Очистка строки
+			return
+		default:
+			fmt.Printf("\r[%c] %s", chars[i%len(chars)], msg)
+			time.Sleep(100 * time.Millisecond)
+			i++
+		}
+	}
+}

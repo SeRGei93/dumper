@@ -13,7 +13,7 @@ func main() {
 		log.Fatal(err)
 	}
 
-	err = dumperS3.Run()
+	err = dumperS3.RunCreate()
 	if err != nil {
 		log.Fatal(err)
 	}

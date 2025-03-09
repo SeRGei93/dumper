@@ -6,6 +6,7 @@ import (
 	"backuper/internal/app/storage/minio"
 	"backuper/internal/util"
 	"fmt"
+	"log"
 	"os"
 )
 
@@ -17,7 +18,7 @@ type DumperS3 struct {
 }
 
 func New(cfg *config.Config) (*DumperS3, error) {
-	db := mysql.New(&cfg.Database)
+	db := mysql.New(cfg)
 	s3, err := minio.New()
 	if err != nil {
 		return nil, fmt.Errorf("ошибка подключения к S3: %v", err)
@@ -31,7 +32,7 @@ func New(cfg *config.Config) (*DumperS3, error) {
 	return &DumperS3{db, s3, cfg.Dir, dumpFile}, nil
 }
 
-func (d *DumperS3) Run() error {
+func (d *DumperS3) RunCreate() error {
 	err := d.Dump()
 	if err != nil {
 		return err
@@ -48,7 +49,27 @@ func (d *DumperS3) Run() error {
 	}
 
 	// удаляем созданный дамп с диска
-	err = d.Clean()
+	err = d.Clean(d.file)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (d *DumperS3) RunRestore() error {
+	file, err := d.s3.DownloadLastObject(d.dir)
+	if err != nil {
+		return err
+	}
+
+	err = d.db.Restore(file)
+	if err != nil {
+		return err
+	}
+
+	// удаляем созданный дамп с диска
+	err = d.Clean(file)
 	if err != nil {
 		return err
 	}
@@ -63,6 +84,8 @@ func (d *DumperS3) Dump() error {
 		return fmt.Errorf("ошибка при создании дампа: %v", err)
 	}
 
+	log.Printf("Дамп создан: %s", d.file)
+
 	return nil
 }
 
@@ -71,6 +94,7 @@ func (d *DumperS3) UploadToS3() error {
 	if err != nil {
 		return fmt.Errorf("ошибка загрузки файла на S3: %v", err)
 	}
+	log.Println("Файл успешно загружен на S3")
 
 	return nil
 }
@@ -88,13 +112,24 @@ func (d *DumperS3) RemoveOldFiles() error {
 		if err != nil {
 			return fmt.Errorf("ошибка при удалении старых файлов с S3: %v", err)
 		}
+
+		fmt.Println("✅ Старые дампы удалены")
 	}
 
 	return nil
 }
 
-func (d *DumperS3) Clean() error {
-	err := os.Remove(d.file)
+func (d *DumperS3) Restore(file string) error {
+	err := d.db.Restore(file)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (d *DumperS3) Clean(file string) error {
+	err := os.Remove(file)
 	if err != nil {
 		return fmt.Errorf("ошибка при удалении файла с диска %v", err)
 	}

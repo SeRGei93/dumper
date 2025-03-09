@@ -1,3 +1,3 @@
-FROM mysql:8
+FROM percona:8.0
 
 EXPOSE 3306
