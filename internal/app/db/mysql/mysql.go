@@ -40,6 +40,7 @@ func (M Mysql) Dump(filePath string) error {
 
 func (M Mysql) Restore(dumpFile string) error {
 	loading := make(chan bool)
+	defer close(loading)
 	go util.Spinner(loading, fmt.Sprintf("Восстановление: %s", dumpFile))
 
 	// Проверяем, существует ли файл дампа
