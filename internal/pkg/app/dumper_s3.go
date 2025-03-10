@@ -78,7 +78,7 @@ func (d *DumperS3) RunRestore() error {
 }
 
 func (d *DumperS3) Dump() error {
-	err := d.db.Dump(d.file)
+	err := d.db.DumpWithSchemaOfExcludedTables(d.file)
 	if err != nil {
 		_ = os.Remove(d.file)
 		return fmt.Errorf("ошибка при создании дампа: %v", err)
