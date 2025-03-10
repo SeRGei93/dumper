@@ -10,8 +10,7 @@ GCFLAGS =        # Можно добавить доп. флаги для опт�
 
 build-linux:
 	@echo "🔨 Компиляция для Linux..."
-	GOOS=$(GOOS_LINUX) GOARCH=$(GOARCH) go build -ldflags "$(LDFLAGS)" -o $(BUILD_DIR)/backup ./cmd/s3_backup/main.go
-	GOOS=$(GOOS_LINUX) GOARCH=$(GOARCH) go build -ldflags "$(LDFLAGS)" -o $(BUILD_DIR)/restore ./cmd/s3_restore/main.go
+	GOOS=$(GOOS_LINUX) GOARCH=$(GOARCH) go build -ldflags "$(LDFLAGS)" -o $(BUILD_DIR)/$(APP_NAME) ./cmd/backup/main.go
 	@echo "✅ Собрано: $(BUILD_DIR)/$(APP_NAME)-linux"
 
 clean:
@@ -22,4 +21,4 @@ clean:
 $(BUILD_DIR):
 	@mkdir -p $(BUILD_DIR)
 
-rebuild: clean build-all
+rebuild: clean build-linux

@@ -1,6 +1,7 @@
 package config
 
 import (
+	"flag"
 	"github.com/caarlos0/env/v11"
 	"github.com/joho/godotenv"
 	"gopkg.in/yaml.v3"
@@ -57,7 +58,11 @@ type Config struct {
 	MaxFiles      int64
 }
 
-var Cfg Config
+var (
+	Cfg         Config
+	BackupFlag  bool
+	RestoreFlag bool
+)
 
 func LoadConfig() {
 	c, err := loadEnvironment()
@@ -88,6 +93,10 @@ func LoadConfig() {
 		Dir:      y.App.Dir,
 		MaxFiles: y.App.MaxFiles,
 	}
+
+	flag.BoolVar(&RestoreFlag, "restore", false, "Выполнить восстановление дампа")
+	flag.BoolVar(&BackupFlag, "backup", false, "Выполнить создание дампа")
+	flag.Parse()
 }
 
 func loadYaml() (*yamlConfig, error) {
