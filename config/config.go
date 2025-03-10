@@ -3,7 +3,6 @@ package config
 import (
 	"flag"
 	"github.com/caarlos0/env/v11"
-	"github.com/joho/godotenv"
 	"gopkg.in/yaml.v3"
 	"log"
 	"os"
@@ -27,11 +26,11 @@ type S3Params struct {
 
 // структура для чтения файла .env
 type envCfg struct {
-	Name      string `env:"DB_NAME,required"`
-	User      string `env:"DB_USER,required"`
-	Password  string `env:"DB_PASSWORD,required"`
-	Host      string `env:"DB_HOST,required"`
-	Endpoint  string `env:"S3_HOST,required"`
+	Name      string `env:"MYSQL_DATABASE,required"`
+	User      string `env:"MYSQL_USER,required"`
+	Password  string `env:"MYSQL_PASSWORD,required"`
+	Host      string `env:"MYSQL_HOST,required"`
+	Endpoint  string `env:"S3_ENDPOINT,required"`
 	Bucket    string `env:"S3_BUCKET,required"`
 	Region    string `env:"S3_REGION,required"`
 	AccessKey string `env:"S3_ACCESS_KEY"`
@@ -89,6 +88,7 @@ func LoadConfig() {
 			Region:    c.Region,
 			AccessKey: c.AccessKey,
 			SecretKey: c.SecretKey,
+			UseSSL:    c.UseSSL,
 		},
 		Dir:      y.App.Dir,
 		MaxFiles: y.App.MaxFiles,
@@ -115,14 +115,14 @@ func loadYaml() (*yamlConfig, error) {
 }
 
 func loadEnvironment() (*envCfg, error) {
-	err := godotenv.Load(".env")
-	if err != nil {
-		return nil, err
-	}
+	//err := godotenv.Load(".env")
+	//if err != nil {
+	//	return nil, err
+	//}
 
 	// parse
 	var c envCfg
-	err = env.Parse(&c)
+	err := env.Parse(&c)
 	if err != nil {
 		return nil, err
 	}

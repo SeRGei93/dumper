@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"path/filepath"
 )
 
 type DumperS3 struct {
@@ -49,7 +50,7 @@ func (d *DumperS3) RunCreate() error {
 	}
 
 	// удаляем созданный дамп с диска
-	err = d.Clean(d.file)
+	err = d.CleanFolder()
 	if err != nil {
 		return err
 	}
@@ -69,10 +70,12 @@ func (d *DumperS3) RunRestore() error {
 	}
 
 	// удаляем созданный дамп с диска
-	err = d.Clean(file)
+	err = d.CleanFolder()
 	if err != nil {
 		return err
 	}
+
+	fmt.Println("✅ Восстановление завершено")
 
 	return nil
 }
@@ -81,10 +84,10 @@ func (d *DumperS3) Dump() error {
 	err := d.db.DumpWithSchemaOfExcludedTables(d.file)
 	if err != nil {
 		_ = os.Remove(d.file)
-		return fmt.Errorf("ошибка при создании дампа: %v", err)
+		return fmt.Errorf("❌ ошибка при создании дампа: %v", err)
 	}
 
-	log.Printf("Дамп создан: %s", d.file)
+	log.Printf("✅ Дамп создан: %s", d.file)
 
 	return nil
 }
@@ -92,9 +95,9 @@ func (d *DumperS3) Dump() error {
 func (d *DumperS3) UploadToS3() error {
 	err := d.s3.Upload(d.file)
 	if err != nil {
-		return fmt.Errorf("ошибка загрузки файла на S3: %v", err)
+		return fmt.Errorf("❌ ошибка загрузки файла на S3: %v", err)
 	}
-	log.Println("Файл успешно загружен на S3")
+	log.Println("✅ Файл загружен на S3")
 
 	return nil
 }
@@ -104,13 +107,13 @@ func (d *DumperS3) RemoveOldFiles() error {
 	// удаляем старые бекапы
 	objects, err := d.s3.GetObjects()
 	if err != nil {
-		return fmt.Errorf("ошибка при удалении старых файлов с S3: %v", err)
+		return fmt.Errorf("❌ ошибка при удалении старых файлов с S3: %v", err)
 	}
 
 	if int64(len(objects)) > d.s3.MaxFiles {
 		err = d.s3.RemoveObjects(objects[d.s3.MaxFiles:])
 		if err != nil {
-			return fmt.Errorf("ошибка при удалении старых файлов с S3: %v", err)
+			return fmt.Errorf("❌ ошибка при удалении старых файлов с S3: %v", err)
 		}
 
 		fmt.Println("✅ Старые дампы удалены")
@@ -128,10 +131,28 @@ func (d *DumperS3) Restore(file string) error {
 	return nil
 }
 
-func (d *DumperS3) Clean(file string) error {
+func (d *DumperS3) RemoveFile(file string) error {
 	err := os.Remove(file)
 	if err != nil {
-		return fmt.Errorf("ошибка при удалении файла с диска %v", err)
+		return fmt.Errorf("❌ ошибка при удалении файла с диска %v", err)
 	}
+	return nil
+}
+
+func (d *DumperS3) CleanFolder() error {
+	// Открываем директорию
+	files, err := os.ReadDir(d.dir)
+	if err != nil {
+		return fmt.Errorf("ошибка при чтении директории: %s", err)
+	}
+
+	// Проходим по всем файлам в директории
+	for _, file := range files {
+		// Получаем полный путь к файлу
+		filePath := filepath.Join(d.dir, file.Name())
+
+		return d.RemoveFile(filePath)
+	}
+
 	return nil
 }

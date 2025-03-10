@@ -40,6 +40,10 @@ func (M Mysql) Dump(filePath string) error {
 }
 
 func (M Mysql) DumpWithSchemaOfExcludedTables(filePath string) error {
+	loading := make(chan bool)
+	defer close(loading)
+	go util.Spinner(loading, "Создание дампа")
+
 	includedFile := strings.Replace(filePath, ".sql.gz", "_included.sql", -1)
 	excludedFile := strings.Replace(filePath, ".sql.gz", "_excluded.sql", -1)
 
@@ -84,6 +88,8 @@ func (M Mysql) DumpWithSchemaOfExcludedTables(filePath string) error {
 	// 4. Удаляем временные файлы
 	_ = os.Remove(includedFile)
 	_ = os.Remove(excludedFile)
+
+	loading <- true
 
 	return nil
 }
